@@ -1,0 +1,242 @@
+---
+title: 'Global Visa Policies: Creating a Network on a Map with R'
+author: "Fabian GÃ¼lzau"
+date: '2018-03-04'
+slug: global-visa-policies-creating-a-network-on-a-map-with-r
+tags:
+- network analysis
+- spatial data
+- global mobility
+categories: []
+---
+
+### Global Visa Policies
+
+Recently, I started a new position in a [project](https://www.sowi.hu-berlin.de/en/lehrbereiche-en/makro-en/forschung-en/projekte-en/sfb-tp-c01) that aims at developing a typology of border walls at a global scale. Against the backdrop of globalization literature of the 1990s, it has been shown that instead of world that is increasingly 'borderless' (Ohmae 1990) we actually observe more and more fortification (Hassner & Wittenberg 2015). While I will certainly write more about this project once it matures, this post features related data that I collected with colleagues at the University of Bremen: The [Visa Network Data](https://www.fiw.uni-bonn.de/demokratieforschung/personen/laube/visanetworkdata). 
+
+Of course, borders are not the only instrument that states employ to control flows of human mobility. Another instrument to filter mobility are visa policies. Arguably, it matters whether we can visit a country without applying for a visa in advance or whether we have to travel to consulates weeks before in order to retain a visa. 
+
+The global pattern of visa waivers between states can be thought of as a network. Between each of two countries, there could either be a visa restriction in place (coded 0) or it could be waived (coded 1). Reading up on the great [blog post](http://skyeome.net/wordpress/?p=866) by Skye Bender-de Moll who explains how we can create a network-on-a-map got me motivated to reproduce his work with the visa network data. 
+
+The remaining post will describe my efforts to visualize the visa network data on a global map. Even though, most parts rely heavily on Skye's work, some deviations were necessary.
+
+### Preparing the Visa Network Data
+
+The Visa Network Data is hosted at the University of Bonn. It is freely available and described in some depth in an article published in the Journal of Ethnic and Migration Study by Mau et al. (2015). The following packages are used to create a network-on-a-map:
+
+```{r packages, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE, results = 'hide'}
+if (!require("pacman")) install.packages("pacman")
+
+p_load(tidyverse, rworldmap, igraph, countrycode, statnet, rio, readxl)
+```
+
+We can access the excel file that contains the network of visa waivers in the following way:
+
+```{r dataload, echo = TRUE, eval = FALSE}
+visa <- import(url, format = "xls", which = 2, range = "C5:FN172", 
+               col_types = c("text", rep("numeric", 167)), na = "/")
+```
+
+```{r dataload_behind, echo = FALSE, eval = TRUE, message = FALSE}
+visa <- read_xls(path = "Visa Network Data_1969_2010.xls",
+                 sheet = 2, range = "C5:FN172", 
+                 col_types = c("text", rep("numeric", 167)), 
+                 na = "/")
+```
+
+Before we have a look at the data, it is necessary to remove certain rows that are badly formatted in the xls-file.
+
+```{r glimpse, echo = TRUE, eval = TRUE}
+# Delete unnecessary rows and columns
+visa <- visa[-1, ]
+visa <- visa[ ,-2]
+
+# Self-ties are included as "NA", however, they should be coded as "0".
+visa[is.na(visa)] <- 0
+```
+
+A next preparation step is necessary because some suboptimal choices were made when the data collection for the visa network data started. Most importantly, instead of applying standardized country identifiers (i.e. ISO3), we used common names. To our avail the beautiful package `countrycode` ([Vignette](https://github.com/vincentarelbundock/countrycode)) transforms different formats of country identifiers. However, let's first rename some unambiguously named countries.
+
+```{r rename, echo = TRUE, eval = TRUE}
+# Rename the first column (country IDs) and unambiguous country names
+visa <- visa %>%
+  rename(Name = "Home country:", 
+         "Central African Republic" = "Central African Rep.",
+         "Comoro Islands" = "Comores Islands",
+         "North Korea" = "Korea (Peoples Rep.)",
+         "Swaziland" = "Swasiland",
+         "Kyrgyzstan" = "Kyrgystan")
+```
+
+Now, transforming full country names into standardized ISO3 codes is a breeze.
+
+```{r countrycode, echo = TRUE, eval = TRUE}
+iso3 <- countrycode(colnames(visa)[2:167], "country.name.en", "iso3c")
+```
+
+Finally, it is possible to approach the network character of the data. (Social) network data can come in different representations such as matrix or edgelist. The visa network data is, by now, very close to a standard matrix representation. We can transform the data into an matrix object with ISO3 codes as row and column names.
+
+```{r matrix, echo = TRUE, eval = TRUE}
+# As a matrix object
+visa.mat <- as.matrix(visa[,2:167])
+
+# Use ISO3 codes as row and column names
+rownames(visa.mat) <- iso3
+colnames(visa.mat) <- iso3
+```
+
+### Using R's network capacities
+
+To provide some substantive results in passing, it is easy to access the countries with the highest visa freedom using `magrittr` and some base R:
+
+```{r top10, echo = TRUE, eval = TRUE}
+visa.mat %>%
+  apply(MARGIN = 2, sum) %>%   # MARGIN = 1 sent visa waivers
+  sort(decreasing = TRUE) %>%
+  head(n = 10)
+```
+
+Citizens of Ireland can travel in 82 countries without applying for a visa in advance. Moreover, it is interesting to note that all countries in the top10 are part of the [Schengen Area](https://en.wikipedia.org/wiki/Schengen_Area). 
+
+Now, we use the `igraph` package in order to access further network analysis capacities in R. In two steps, we transform the object `visa.mat` into an igraph object which is then represented as edgelist. 
+
+```{r igraph, echo = TRUE, eval = TRUE}
+# Step 1: Create an igraph object
+visa.graph <- igraph::graph.adjacency(visa.mat, mode = "directed",
+                                                  diag = FALSE, add.colnames = TRUE)
+
+# Step 2: Transform into an edgelist 
+visa.edge <- igraph::get.edgelist(visa.graph, names = TRUE)
+```
+
+An edgelist just lists all relationships that exists in our network. 
+
+```{r edgelist, echo = TRUE, eval = TRUE}
+head(visa.edge)
+```
+
+Here we see that Albania (country no. 2) allows citizens of Argentina (5) and Australia (7) to travel to Albania without applying for a visa in advance. 
+
+Next, I replace the numbers with ISO3 codes as this makes deciphering the edgelist much easier. 
+
+```{r replace, echo = TRUE, eval = TRUE}
+# Step 1: Transform the edgelist into a dataframe
+visa.edge <- tibble(
+  from.no = visa.edge[,1],
+  to.no = visa.edge[,2])
+
+# Step 2: Create a lookup table for matching
+lookup <- tibble(
+  country = colnames(visa.mat),
+  no = 1:166)
+
+# Step 3: Replace numbers with ISO3 codes
+visa.edge$from <- lookup[match(visa.edge$from.no, lookup$no),]$country
+visa.edge$to <- lookup[match(visa.edge$to.no, lookup$no),]$country
+```
+
+Let see if our interpretation of the edgelist above was correct.
+
+```{r edgelist.name, echo = TRUE, eval = TRUE}
+head(visa.edge)
+```
+
+Indeed, we can confirm our interpretation. 
+
+### Creating a world map
+
+Next, we use a package that entails a shapefile for the world. There are several. Here, I use the high resolution world map of the packages `rworldmap` and `rworldxtra`.
+
+```{r mapdata, echo = TRUE, eval = TRUE}
+data("countriesLow")
+```
+
+We can now easily plot a world map with a one-liner:
+
+```{r plotmap, echo = TRUE, eval = TRUE}
+plot(countriesLow)
+```
+
+I remove Greenland and Antarctica to make the map a little bit leaner:
+
+```{r remove, echo = TRUE, eval = TRUE}
+countries <- countriesLow[countriesLow@data$ISO3 != c("GRL", "ATA"),] # Greenland
+```
+
+### Making a network spatial
+
+In a last step, I add longitudes and latitudes to the network in order to make the data "spatial". 
+
+```{r makingspatial, echo = TRUE, eval = TRUE}
+# Step 1: Create a dataframe with iso3 codes and respective lon/lat
+countrycoords <- tibble(
+  name = iso3,           
+  lon = countries@data[match(iso3, countries@data$ISO3),]$LON,
+  lat = countries@data[match(iso3, countries@data$ISO3),]$LAT
+)
+
+# Step 2: Add them to the edgelist
+visa.edge$region.from <- countries[match(visa.edge$from, countries$ISO3),]$REGION
+visa.edge$region.to <- countries[match(visa.edge$to, countries$ISO3),]$REGION
+```
+
+The edgelist is now spatial.
+
+```{r is.spatial, echo = TRUE, eval = TRUE}
+head(visa.edge)
+```
+
+### Plotting the network on a map
+
+The final step involves the visualization of both the visa network and the world map. A final issue is the size of our network. There are just too many visa waivers to plot them all. In the end, our plot would display nothing more than a huge hairball. Hence, I reduce the network to only those visa waivers received by African countries. 
+
+```{r onlyAfrica, echo = TRUE, eval = TRUE}
+visa.edge <- visa.edge[visa.edge$region.to == "Africa", ]
+```
+
+Now, we turn our network into a network object provided the `network` package which is part of the statnet suite. 
+
+```{r network, echo = TRUE, eval = TRUE}
+visa.net <- network(visa.edge,
+                    matrix.type = 'edgelist',
+                    directed = TRUE)
+```
+
+The network packages comes with functions that can be used to set `network.vertex.names` and to `set.vertex.attributes`. 
+
+```{r set_vertex, echo = TRUE, eval = TRUE}
+# Set vertex labels
+network.vertex.names(visa.net) <- countrycoords$name
+
+# Set vertex attributes
+# Here: Longitudes and latitudes
+set.vertex.attribute(visa.net, attrname = "lon", countrycoords$lon)
+set.vertex.attribute(visa.net, attrname = "lat", countrycoords$lat)
+```
+
+Finally, we arrived at point where we can visualize a network-on-a-map. This is involves two steps. First, we plot the world map and, second, we put our network on top of it.
+
+```{r networkmap, echo = TRUE, eval = TRUE}
+# (1) Plot the world map
+plot(countries)
+
+# (2) Plot the network on top (using the network package)
+plot.network(visa.net,
+             new = FALSE, # Plot on top of the world map
+             coord = cbind(visa.net%v%"lon", visa.net%v%"lat"), # Lon/Lat
+             edge.col = '#AA555555',
+             vertex.cex = 0.5,
+             vertex.col = '#AA555555',
+             vertex.border = "white",
+             jitter = FALSE)
+```
+
+Et voilà, we reproduced Skye's network-on-a-map using our visa network data. 
+
+#### Bibliography
+
+Mau, S., Gülzau, F., Laube, L. & Zaun, N. (2015): The Global Mobility Divide: How Visa Policies Have Evolved over Time, Journal of Ethnic and Migration Studies, 41:8, 1192-1213. 
+
+Hassner, R.E. & Wittberg, J. (2015): Barriers to Entry: Who Builds Fortified Boundaries and Why?, International Security, 40:1, 157-190.
+
+Ohmae, K. (1990): The Borderless World, New York: Harper Collins.
