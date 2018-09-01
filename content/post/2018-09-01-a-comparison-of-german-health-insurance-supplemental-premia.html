@@ -1,0 +1,257 @@
+---
+title: A comparison of German health insurance supplemental premia
+author: Fabian Gülzau
+date: '2018-09-01'
+slug: a-comparison-of-german-health-insurance-supplemental-premia
+categories:
+  - webscraping
+tags: []
+header:
+  caption: ''
+  image: ''
+---
+
+
+
+<p>Admittedly, the post at hand emerged from a very plain issue. In Germany, statutory health insurances charge a supplemental premium which differs between the respective providers. Recently, my current provider increased its’ premium and I was confronted with the option to switch to a potentially less expensive one. To make an informed decision, I tried to compare the supplemental premia across providers available at my place of residence (Berlin). Data on the respective premia are available at the <a href="https://www.gkv-spitzenverband.de/english/english.jsp">website</a> of the “National Association of Statutory Health Insurance Funds”. The website even provides a <a href="https://www.gkv-spitzenverband.de/service/versicherten_service/krankenkassenliste/krankenkassen.jsp">table</a> that can be filtered by location. Unfortunately, it is not possible to arrange the table by supplemental premia. This, however, is an easy task in R. The task was then to grab the data and apply some basic data wrangling which I present in the remainder of this post.</p>
+<div id="is-scraping-permitted" class="section level3">
+<h3>Is scraping permitted?</h3>
+<p>Getting data from a website is an easy task for <a href="https://github.com/hadley/rvest">rvest</a>. Still, before attempting to scrape a site, we should also check whether an <a href="https://en.wikipedia.org/wiki/Application_programming_interface">API</a> is available. In addition, we should consult the <a href="https://en.wikipedia.org/wiki/Robots_exclusion_standard">robot.txt</a> in order to check whether scraping is in line with the terms of the provider.</p>
+<p>But let’s first load the packages needed for the task at hand.</p>
+<pre class="r"><code>if (!require(&quot;pacman&quot;)) install.packages(&quot;pacman&quot;)
+
+p_load(tidyverse, rvest, robotstxt, qdap, janitor, knitr)</code></pre>
+<p>I learned about the <code>robotstxt</code> package from a <a href="https://stevenmortimer.com/scraping-responsibly-with-r/">blogpost</a> by Steven Mortimer on “Scraping responsibly with R” and wanted to test that package. So here we go:</p>
+<p>Using <code>paths_allowed</code> from <code>robotstxt</code>, it is easy to check whether scraping is permitted:</p>
+<pre class="r"><code>paths_allowed(
+  paths  = &quot;/service/versicherten_service/krankenkassenliste/&quot;, 
+  domain = &quot;gkv-spitzenverband.de&quot;, 
+  bot    = &quot;*&quot;
+  )</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<p>The function returns <code>TRUE</code> and we should be fine with scraping the table. Moreover, there is no API available. Accordingly, I proceed with the scraping procedure.</p>
+</div>
+<div id="setting-up-the-scraper" class="section level3">
+<h3>Setting up the scraper</h3>
+<p>The respective table is created dynamically which sometimes causes trouble. In this case, however, everything can be steered through the <a href="https://en.wikipedia.org/wiki/URL">URL</a>. At the moment, there are eight pages containing information on the statutory health insurances. The URL holds a place for the respective page number which we can use to loop over the individual pages. However, I learned that it is often easier to start with a single page before attempting to put everything into a loop. So, let’s go:</p>
+<p>We need the URL and a CSS selector that identifies the relevant part of the website. Unfortunately, the ID of the table changes from page to page. Accordingly, we can’t use the convenient <code>html_table</code> function and must resort to an identifier for each row of the table. The respective CSS tags can be singled out using <a href="https://selectorgadget.com/">Selector Gadget</a> or the developer tools of your browser.</p>
+<pre class="r"><code>url &lt;- &quot;https://www.gkv-spitzenverband.de/service/versicherten_service/krankenkassenliste/krankenkassen.jsp?pageNo=1&amp;filter=0#krankenkassen&quot;
+
+# CSS selectors
+insurance.css &lt;- &quot;tbody th&quot;
+premium.css &lt;- &quot;td.alignRight&quot;
+location.css &lt;- &quot;td:nth-child(3)&quot;</code></pre>
+<p>Now, all the necessary arguments are safely stored in objects. Passing those arguments to the respective functions of <code>rvest</code> gives us the following results:</p>
+<pre class="r"><code>url %&gt;%
+  read_html() %&gt;% # Create a html document
+  html_nodes(css = insurance.css) %&gt;% # Identify the information
+  html_text() %&gt;% # Get the text
+  bracketX() %&gt;% # Remove unnecessary strings (qdap package)
+  head(n = 5) %&gt;%
+  kable(col.names = &quot;Providers&quot;)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Providers</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">actimonda BKK</td>
+</tr>
+<tr class="even">
+<td align="left">AOK - Die Gesundheitskasse für Niedersachsen</td>
+</tr>
+<tr class="odd">
+<td align="left">AOK - Die Gesundheitskasse in Hessen</td>
+</tr>
+<tr class="even">
+<td align="left">AOK Baden-Württemberg</td>
+</tr>
+<tr class="odd">
+<td align="left">AOK Bayern - Die Gesundheitskasse</td>
+</tr>
+</tbody>
+</table>
+<p>In the next step, we want to get all rows and transform them into a <code>tibble</code>. Now that we got an example code, this is again an easy task.</p>
+<pre class="r"><code>page &lt;- read_html(url)
+
+insurance &lt;- html_nodes(page, css = insurance.css) %&gt;%
+  html_text() %&gt;%
+  bracketX()
+
+premium &lt;- html_nodes(page, css = premium.css) %&gt;%
+  html_text() %&gt;%
+  str_replace(&quot;,&quot;, &quot;.&quot;) %&gt;%
+  str_extract_all(&quot;[:digit:].[:digit:]{2}&quot;) %&gt;%
+  as.numeric()
+
+location &lt;- html_nodes(page, css = location.css) %&gt;%
+  html_text() %&gt;%
+  bracketX()</code></pre>
+<p>Finally, we can create a tibble that contains the relevant information of the first page.</p>
+<pre class="r"><code>tibble(insurance, premium, location) %&gt;%
+  head(n = 10) %&gt;%
+  kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">insurance</th>
+<th align="right">premium</th>
+<th align="left">location</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">actimonda BKK</td>
+<td align="right">1.0</td>
+<td align="left">bundesweit</td>
+</tr>
+<tr class="even">
+<td align="left">AOK - Die Gesundheitskasse für Niedersachsen</td>
+<td align="right">0.8</td>
+<td align="left">Niedersachsen</td>
+</tr>
+<tr class="odd">
+<td align="left">AOK - Die Gesundheitskasse in Hessen</td>
+<td align="right">1.0</td>
+<td align="left">Hessen</td>
+</tr>
+<tr class="even">
+<td align="left">AOK Baden-Württemberg</td>
+<td align="right">1.0</td>
+<td align="left">Baden-Württemberg</td>
+</tr>
+<tr class="odd">
+<td align="left">AOK Bayern - Die Gesundheitskasse</td>
+<td align="right">1.1</td>
+<td align="left">Bayern</td>
+</tr>
+<tr class="even">
+<td align="left">AOK Bremen / Bremerhaven</td>
+<td align="right">0.8</td>
+<td align="left">Bremen</td>
+</tr>
+<tr class="odd">
+<td align="left">AOK Nordost - Die Gesundheitskasse</td>
+<td align="right">0.9</td>
+<td align="left">Berlin, Brandenburg, Mecklenburg-Vorpommern</td>
+</tr>
+<tr class="even">
+<td align="left">AOK NordWest - Die Gesundheitskasse</td>
+<td align="right">0.9</td>
+<td align="left">Nordrhein-Westfalen, Schleswig-Holstein</td>
+</tr>
+<tr class="odd">
+<td align="left">AOK PLUS - Die Gesundheitskasse für Sachsen und Thüringen</td>
+<td align="right">0.6</td>
+<td align="left">Sachsen, Thüringen</td>
+</tr>
+<tr class="even">
+<td align="left">AOK Rheinland/Hamburg - Die Gesundheitskasse</td>
+<td align="right">1.4</td>
+<td align="left">Hamburg, Nordrhein-Westfalen</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="extracting-several-pages-of-information" class="section level3">
+<h3>Extracting several pages of information</h3>
+<p>Now that the information is available in R, it is a breeze to extract relevant information using the usual toolbox of packages. Before approaching this task, we have to grab the whole table which spans several pages on the website.</p>
+<p>First, we need to create a vector that consists of the URLs that lead us to the individual pages. As aforementioned, the URL has a placeholder for the page number. This can be leveraged:</p>
+<pre class="r"><code>urls &lt;- vector(mode = &quot;character&quot;, length = 8)
+for(i in seq_along(urls)) {
+  urls[[i]] &lt;- paste0(&quot;https://www.gkv-spitzenverband.de/service/versicherten_service/krankenkassenliste/krankenkassen.jsp?pageNo=&quot;, i, &quot;&amp;filter=0#krankenkassen&quot;) 
+}</code></pre>
+<p>The vector <code>urls</code> now contains the links to the respective pages. Next, we can wrap up everything in a loop that runs over the newly created vector of URLs.</p>
+<pre class="r"><code>tables &lt;- vector(mode = &quot;list&quot;, length = 8)
+
+for (i in seq_along(urls)){
+  page &lt;- read_html(urls[i])
+  insurance &lt;- html_text(html_nodes(page, css = &quot;tbody th&quot;))
+  premium &lt;- html_text(html_nodes(page, css = &quot;td.alignRight&quot;))
+  location &lt;- html_text(html_nodes(page, css = &quot;td:nth-child(3)&quot;))
+  
+  table &lt;- tibble(insurance = insurance,
+                  premium = premium,
+                  location = location
+                  )
+  
+  tables[[i]] &lt;- table
+}
+
+table.df &lt;- as.tibble(
+  bind_rows(tables)
+)</code></pre>
+<p>Unfortunately, the column <code>premium</code> is a character vector but this issue can be resolved with some basic lines of dplyr. At the same time, I use the function <code>scrubber</code> from the package <a href="https://github.com/sfirke/janitor">janitor</a> to clean up the remaining character vectors.</p>
+<p>Finally, we can subset the table according to our location and arrange it concerning the premia.</p>
+<pre class="r"><code>healthB.df &lt;- table.df %&gt;%
+  filter(str_detect(location, &quot;Berlin|bundesweit&quot;) == TRUE) %&gt;%
+  arrange(premium)
+
+healthB.df %&gt;%
+  .[1:10,] %&gt;%
+  kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">insurance</th>
+<th align="right">premium</th>
+<th align="left">location</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">hkk</td>
+<td align="right">0.59</td>
+<td align="left">bundesweit</td>
+</tr>
+<tr class="even">
+<td align="left">BKK firmus</td>
+<td align="right">0.60</td>
+<td align="left">bundesweit</td>
+</tr>
+<tr class="odd">
+<td align="left">IKK gesund plus</td>
+<td align="right">0.60</td>
+<td align="left">bundesweit</td>
+</tr>
+<tr class="even">
+<td align="left">Audi BKK</td>
+<td align="right">0.70</td>
+<td align="left">bundesweit</td>
+</tr>
+<tr class="odd">
+<td align="left">BKK VerbundPlus</td>
+<td align="right">0.70</td>
+<td align="left">bundesweit</td>
+</tr>
+<tr class="even">
+<td align="left">SKD BKK</td>
+<td align="right">0.70</td>
+<td align="left">Baden-Württemberg, Bayern, Berlin, Bremen, Hamburg, Hessen, Niedersachsen, Nordrhein-Westfalen, Rheinland-Pfalz, Saarland, Sachsen</td>
+</tr>
+<tr class="odd">
+<td align="left">AOK Nordost - Die Gesundheitskasse</td>
+<td align="right">0.90</td>
+<td align="left">Berlin, Brandenburg, Mecklenburg-Vorpommern</td>
+</tr>
+<tr class="even">
+<td align="left">BKK Freudenberg</td>
+<td align="right">0.90</td>
+<td align="left">Baden-Württemberg, Bayern, Berlin, Hessen, Niedersachsen, Nordrhein-Westfalen, Rheinland-Pfalz, Sachsen</td>
+</tr>
+<tr class="odd">
+<td align="left">Bosch BKK</td>
+<td align="right">0.90</td>
+<td align="left">Baden-Württemberg, Bayern, Berlin, Brandenburg, Hamburg, Hessen, Mecklenburg-Vorpommern, Niedersachsen, Nordrhein-Westfalen, Rheinland-Pfalz, Saarland, Sachsen, Sachsen-Anhalt, Thüringen</td>
+</tr>
+<tr class="even">
+<td align="left">Debeka BKK</td>
+<td align="right">0.90</td>
+<td align="left">bundesweit</td>
+</tr>
+</tbody>
+</table>
+<p>Of course, this post is not a recommendation. Health insurances differ quite a lot when it comes down to their service provision and quality. So one should always take further steps before choosing a health insurance. Still, the cheapest provider in Berlin charges a premium of 0.59%, while the most expensive one has a premium of 1.7%. That’s surely something to consider.</p>
+</div>

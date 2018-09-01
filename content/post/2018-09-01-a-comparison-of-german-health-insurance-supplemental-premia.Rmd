@@ -1,0 +1,158 @@
+---
+title: A comparison of German health insurance supplemental premia
+author: Fabian Gülzau
+date: '2018-09-01'
+slug: a-comparison-of-german-health-insurance-supplemental-premia
+categories:
+  - webscraping
+tags: []
+header:
+  caption: ''
+  image: ''
+---
+
+Admittedly, the post at hand emerged from a very plain issue. In Germany, statutory health insurances charge a supplemental premium which differs between the respective providers. Recently, my current provider increased its' premium and I was confronted with the option to switch to a potentially less expensive one. To make an informed decision, I tried to compare the supplemental premia across providers available at my place of residence (Berlin). 
+Data on the respective premia are available at the [website](https://www.gkv-spitzenverband.de/english/english.jsp) of the "National Association of Statutory Health Insurance Funds". The website even provides a [table](https://www.gkv-spitzenverband.de/service/versicherten_service/krankenkassenliste/krankenkassen.jsp) that can be filtered by location. Unfortunately, it is not possible to arrange the table by supplemental premia. This, however, is an easy task in R. The task was then to grab the data and apply some basic data wrangling which I present in the remainder of this post. 
+
+### Is scraping permitted?
+
+Getting data from a website is an easy task for [rvest](https://github.com/hadley/rvest). Still, before attempting to scrape a site, we should also check whether an [API](https://en.wikipedia.org/wiki/Application_programming_interface) is available. In addition, we should consult the [robot.txt](https://en.wikipedia.org/wiki/Robots_exclusion_standard) in order to check whether scraping is in line with the terms of the provider. 
+
+But let's first load the packages needed for the task at hand.
+
+```{r packages, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE, results = 'hide'}
+if (!require("pacman")) install.packages("pacman")
+
+p_load(tidyverse, rvest, robotstxt, qdap, janitor, knitr)
+```
+
+I learned about the `robotstxt` package from a [blogpost](https://stevenmortimer.com/scraping-responsibly-with-r/) by Steven Mortimer on "Scraping responsibly with R" and wanted to test that package. So here we go:
+
+Using `paths_allowed` from `robotstxt`, it is easy to check whether scraping is permitted:
+
+```{r path_allowed, echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+paths_allowed(
+  paths  = "/service/versicherten_service/krankenkassenliste/", 
+  domain = "gkv-spitzenverband.de", 
+  bot    = "*"
+  )
+```
+
+The function returns `TRUE` and we should be fine with scraping the table. Moreover, there is no API available. Accordingly, I proceed with the scraping procedure. 
+
+### Setting up the scraper
+
+The respective table is created dynamically which sometimes causes trouble. In this case, however, everything can be steered through the [URL](https://en.wikipedia.org/wiki/URL). At the moment, there are eight pages containing information on the statutory health insurances. The URL holds a place for the respective page number which we can use to loop over the individual pages. However, I learned that it is often easier to start with a single page before attempting to put everything into a loop. So, let's go:
+
+We need the URL and a CSS selector that identifies the relevant part of the website. Unfortunately, the ID of the table changes from page to page. Accordingly, we can't use the convenient `html_table` function and must resort to an identifier for each row of the table. The respective CSS tags can be singled out using [Selector Gadget](https://selectorgadget.com/) or the developer tools of your browser. 
+
+```{r singlePage, echo = TRUE, eval = TRUE}
+url <- "https://www.gkv-spitzenverband.de/service/versicherten_service/krankenkassenliste/krankenkassen.jsp?pageNo=1&filter=0#krankenkassen"
+
+# CSS selectors
+insurance.css <- "tbody th"
+premium.css <- "td.alignRight"
+location.css <- "td:nth-child(3)"
+```
+
+Now, all the necessary arguments are safely stored in objects. Passing those arguments to the respective functions of `rvest` gives us the following results:
+
+```{r premium, echo = TRUE, eval = TRUE}
+url %>%
+  read_html() %>% # Create a html document
+  html_nodes(css = insurance.css) %>% # Identify the information
+  html_text() %>% # Get the text
+  bracketX() %>% # Remove unnecessary strings (qdap package)
+  head(n = 5) %>%
+  kable(col.names = "Providers")
+```
+
+In the next step, we want to get all rows and transform them into a `tibble`. Now that we got an example code, this is again an easy task.
+
+```{r singleTable, echo = TRUE, eval = TRUE}
+page <- read_html(url)
+
+insurance <- html_nodes(page, css = insurance.css) %>%
+  html_text() %>%
+  bracketX()
+
+premium <- html_nodes(page, css = premium.css) %>%
+  html_text() %>%
+  str_replace(",", ".") %>%
+  str_extract_all("[:digit:].[:digit:]{2}") %>%
+  as.numeric()
+
+location <- html_nodes(page, css = location.css) %>%
+  html_text() %>%
+  bracketX()
+```
+
+Finally, we can create a tibble that contains the relevant information of the first page. 
+
+```{r singleTableDF, echo = TRUE, eval = TRUE}
+tibble(insurance, premium, location) %>%
+  head(n = 10) %>%
+  kable()
+```
+
+### Extracting several pages of information
+
+Now that the information is available in R, it is a breeze to extract relevant information using the usual toolbox of packages. Before approaching this task, we have to grab the whole table which spans several pages on the website. 
+
+First, we need to create a vector that consists of the URLs that lead us to the individual pages. As aforementioned, the URL has a placeholder for the page number. This can be leveraged: 
+
+```{r urls, echo = TRUE, eval = TRUE}
+urls <- vector(mode = "character", length = 8)
+for(i in seq_along(urls)) {
+  urls[[i]] <- paste0("https://www.gkv-spitzenverband.de/service/versicherten_service/krankenkassenliste/krankenkassen.jsp?pageNo=", i, "&filter=0#krankenkassen") 
+}
+```
+
+The vector `urls` now contains the links to the respective pages. Next, we can wrap up everything in a loop that runs over the newly created vector of URLs.
+
+```{r allPages, echo = TRUE, eval = TRUE}
+tables <- vector(mode = "list", length = 8)
+
+for (i in seq_along(urls)){
+  page <- read_html(urls[i])
+  insurance <- html_text(html_nodes(page, css = "tbody th"))
+  premium <- html_text(html_nodes(page, css = "td.alignRight"))
+  location <- html_text(html_nodes(page, css = "td:nth-child(3)"))
+  
+  table <- tibble(insurance = insurance,
+                  premium = premium,
+                  location = location
+                  )
+  
+  tables[[i]] <- table
+}
+
+table.df <- as.tibble(
+  bind_rows(tables)
+)
+```
+
+Unfortunately, the column `premium` is a character vector but this issue can be resolved with some basic lines of dplyr. At the same time, I use the function `scrubber` from the package [janitor](https://github.com/sfirke/janitor) to clean up the remaining character vectors. 
+
+```{r chrtonum, echo = FALSE, eval = TRUE}
+table.df <- table.df %>%
+  mutate(premium = as.numeric(
+      str_extract(
+        str_replace(premium, ",", "."),
+        "[:digit:].[:digit:]{2}"))) %>%
+  mutate_if(is_character, scrubber) # clean up (scrubber)
+```
+
+Finally, we can subset the table according to our location and arrange it concerning the premia. 
+
+```{r arrange, echo = TRUE, eval = TRUE}
+healthB.df <- table.df %>%
+  filter(str_detect(location, "Berlin|bundesweit") == TRUE) %>%
+  arrange(premium)
+
+healthB.df %>%
+  .[1:10,] %>%
+  kable()
+```
+
+Of course, this post is not a recommendation. Health insurances differ quite a lot when it comes down to their service provision and quality. So one should always take further steps before choosing a health insurance. Still, the cheapest provider in Berlin charges a premium of `r min(healthB.df$premium)`%, while the most expensive one has a premium of `r max(healthB.df$premium)`%. That's surely something to consider. 
