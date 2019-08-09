@@ -15,10 +15,8 @@ weight = 60
 
 +++
 
-I am a teaching instructor for the following courses at the Department of Social Sciences at the Humboldt-Universität zu Berlin:
-
-- Data exploration and visualization with R
-- Turn to parenting: Parenthood between de- and refamilialization
+Currently, I do not have teaching obligations. However, I regularly organize workshops 
+on webscraping, text mining and visualization with R. 
 
 For an overview of my teaching portfolio see my homepage at the chair of macrosociology [link](https://www.sowi.hu-berlin.de/en/lehrbereiche-en/makro-en/mitarbeiter-en/Guelzau?set_language=en).
 
