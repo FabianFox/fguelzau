@@ -1,5 +1,5 @@
 baseurl = "https://fguelzau.netlify.com/"  # End your URL with a `/` trailing slash, e.g. `https://example.com/`.
-title = "Fabian Gülzau"
+title = "Dr. Fabian Gülzau"
 copyright = "&copy; 2017 Fabian Gülzau"
 theme = "hugo-academic"
 enableEmoji = true
@@ -38,8 +38,8 @@ defaultContentLanguageInSubdir = false
   font = "default"
 
   # Your details.
-  name = "Fabian Gülzau"
-  role = "Researcher and PhD candidate"
+  name = "Dr. Fabian Gülzau"
+  role = "Postdoc"
 
   # Organizations/Affiliations.
   #   Separate multiple entries with a comma, using the form: `[ {name="Org1", url=""}, {name="Org2", url=""} ]`.
@@ -53,7 +53,7 @@ defaultContentLanguageInSubdir = false
   phone = ""
   skype = ""
   telegram = ""
-  twitter = "FabFuchs"
+  twitter = "fguelzau"
   github = "FabianFox"
 
   # Enable Keybase in Contact section by entering your keybase.io username.
@@ -199,7 +199,7 @@ defaultContentLanguageInSubdir = false
     icon_pack = "fa"
     link = "//github.com/FabianFox"
 
-[[params.social]]
+  [[params.social]]
     icon = "orcid"
     icon_pack = "ai"
     link = "http://orcid.org/0000-0002-5649-026X"
