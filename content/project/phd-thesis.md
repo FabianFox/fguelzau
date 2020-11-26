@@ -42,8 +42,10 @@ Here is the [open access link](https://www.tandfonline.com/doi/full/10.1080/1350
 
 This paper investigates whether the current ‘leitbild’ of ‘good parenting’ becomes relevant for parents. In order to address this question user submission to a digital parent forum are used as data base. This digital data enables me to not only test the relevance of the current ‘leitbild’ but also to analyze how parents position themselves against demands from politics, science and parenting guides. With topic models, I apply an innovative method from the computational social sciences (CSS) to analyze the data which consists of 58,240 user submissions. In family sociology, these methods have not been utilized yet. My analysis shows that expert knowledge is used by parents to justify and reflect on their own child-rearing. Parents refer to expert knowledge mainly in a positive manner, however, some authors are viewed rather critically. 
 
-Here is the [link](https://www.budrich-journals.de/index.php/zff/article/view/32055) to the article.
+Here is the [open access link](https://www.budrich-journals.de/index.php/zff/article/view/32055) to the article.
 
 **3. Paradigm shift in German family policy: Applying a topic model to map reform and public discourse, 1990-2016**
 
 This article explores newspaper discourse surrounding paradigm shift of social policy. The case at hand, Germany, is considered a prime example of a welfare state that is particularly resilient to reform. Hence, the rapid paradigm shift of German family policy in the late 1990s is still puzzling. This study addresses this puzzle by following the insight that discourse is crucial for policy change. Politicians have to promote their reform initiatives prior to their implementation. The main channel through which communication with the wider public takes place is mass media. Here, I use newspaper coverage from 1990 to 2016 as an empirical case in order to analyze whether media is responsive to reform initiatives. The analytical approach makes use of topic modeling an innovative method stemming from computational social science. 
+
+Here is the [open access link](https://onlinelibrary.wiley.com/doi/full/10.1002/epa2.1072) to the article.
