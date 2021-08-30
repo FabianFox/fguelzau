@@ -1,5 +1,5 @@
 ---
-title: 'Webscraping with R: An Introduction'
+title: Webscraping with R: An Introduction
 author: Fabian Gülzau
 date: '2019-01-18'
 slug: webscraping-with-r-an-introduction
