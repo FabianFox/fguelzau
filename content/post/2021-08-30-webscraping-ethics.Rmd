@@ -6,7 +6,7 @@ slug: webscraping-ethics
 categories:
 - webscraping
 - ethics
-tags: R
+tags: webscraping
 header:
   caption: ''
   image: ''
