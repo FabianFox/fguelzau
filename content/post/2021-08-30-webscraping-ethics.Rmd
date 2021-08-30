@@ -6,8 +6,8 @@ slug: webscraping-ethics
 categories:
   - webscraping
   - ethics
-tags: 
-  - webscraping
+tags:
+  - teaching
   - R
 header:
   caption: ''
