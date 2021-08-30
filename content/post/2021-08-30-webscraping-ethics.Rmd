@@ -15,7 +15,7 @@ header:
 ---
 
 [Simon Munzert](https://simonmunzert.github.io/) and [Johannes Himmelreich](https://johanneshimmelreich.net/) 
-organized a wonderful workshop on "Teaching Data Science for Non-Data Scientists and Data Ethics for Non-Ethicists" on the 19/20 August 2021. The [workshop program](/pdf/datascienceethics.pdf) included several instigating presentations. 
+organized a wonderful workshop on "Teaching Data Science for Non-Data Scientists and Data Ethics for Non-Ethicists" on the 19/20 August 2021. The [workshop program](/files/pdf/datascienceethics.pdf) included several instigating presentations. 
 
 I presented some preliminary thoughts on webscraping and (data) ethics. The tentative insights mainly
 came from several workshops that I gave. The slides are available below: 
