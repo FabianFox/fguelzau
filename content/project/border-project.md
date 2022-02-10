@@ -28,6 +28,11 @@ caption = ""
 
 +++
 
-Since April 2018, I started working on a project entitled 'The Borders of the World: Processes of the De- and Rebordering in a Global Perspective'. The projects intends to gather information on processes of border fortification at a global scale. 
+Between 2018 and 2021, I worked with Steffen Mau and Kristina Korte on territorial borders. The project
+'The Borders of the World: Processes of the De- and Rebordering in a Global Perspective' was part of
+the CRC 1265 "The Re-Figuration of Spaces". 
 
-Further information is available on the project's [website](https://www.sowi.hu-berlin.de/en/lehrbereiche-en/makro-en/forschung-en/projekte-en/sfb-tp-c01).
+The project led to several publications such as a special issue published in [Historical Social Research]((https://fguelzau.netlify.app/publication/border-fortification_2021/)) and an article on
+temporary border controls in the Schengen area (available in the [Journal of Borderlands Studies]((https://fguelzau.netlify.app/publication/temporary-border-controls_2021/))). 
+
+Further information is available on the project  [website](https://www.sowi.hu-berlin.de/en/lehrbereiche-en/makro-en/forschung-en/projekte-en/sfb-tp-c01).
