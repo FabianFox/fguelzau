@@ -16,7 +16,5 @@ weight = 60
 +++
 
 Currently, I do not have teaching obligations. However, I regularly organize workshops 
-on webscraping, text mining and visualization with R. 
-
-For an overview of my teaching portfolio see my homepage at the chair of macrosociology [link](https://www.sowi.hu-berlin.de/en/lehrbereiche-en/makro-en/mitarbeiter-en/Guelzau?set_language=en).
+on webscraping, text mining, and visualization with R. 
 
