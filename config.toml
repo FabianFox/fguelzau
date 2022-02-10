@@ -43,11 +43,11 @@ defaultContentLanguageInSubdir = false
 
   # Organizations/Affiliations.
   #   Separate multiple entries with a comma, using the form: `[ {name="Org1", url=""}, {name="Org2", url=""} ]`.
-  organizations = [ { name = "Humboldt-Universität zu Berlin, Germany", url = "https://www.hu-berlin.de/en" } ]
+  organizations = [ { name = "The Expert Council on Integration and Migration, Germany", url = "https://www.svr-migration.de/en/" } ]
 
   gravatar = false  # Get your avatar from Gravatar.com? (true/false)
   avatar = "profile-picture-guelzau.jpg"  # Specify an avatar image (in `static/img/` folder) or delete value to disable avatar.
-  email = "fabian.guelzau@hu-berlin.de"
+  email = "guelzau@svr-migration.de"
   address = ""
   office_hours = ""
   phone = ""
@@ -182,12 +182,12 @@ defaultContentLanguageInSubdir = false
   [[params.social]]
     icon = "envelope"
     icon_pack = "fa"
-    link = "mailto:fabian.guelzau@hu-berlin.de"
+    link = "mailto:guelzau@svr-migration.de"
 
   [[params.social]]
     icon = "twitter"
     icon_pack = "fa"
-    link = "//twitter.com/FabFuchs"
+    link = "//twitter.com/fguelzau"
 
   [[params.social]]
     icon = "google-scholar"
@@ -207,7 +207,7 @@ defaultContentLanguageInSubdir = false
   [[params.social]]
     icon = "researchgate"
     icon_pack = "ai"
-link = "https://www.researchgate.net/profile/Fabian_Guelzau"
+    link = "https://www.researchgate.net/profile/Fabian_Guelzau"
 
 # Navigation Links
 #   To link a homepage widget, specify the URL as a hash `#` followed by the filename of the
