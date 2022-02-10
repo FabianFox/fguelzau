@@ -37,7 +37,7 @@ weight = 5
 
 # Biography
 
-I am a researcher at the The Expert Council on Integration and Migration in Berlin. My research interests include migration sociology and (global) social inequality. In my research, I like to use the R software environment and approaches from the toolkit of computational social sciences such as topic models, webscraping and network analysis. 
+I am a researcher at "The Expert Council on Integration and Migration" in Berlin. My research interests include migration sociology and (global) social inequality. In my research, I like to use the R software environment and approaches from the toolkit of computational social sciences such as topic models, webscraping and network analysis. 
 
 Currently, I work on polarization and attitudes towards migration in Germany. In addition, my research interests include 
 questions regarding the global mobility regime (in particular, territorial borders and visa regulations). 
