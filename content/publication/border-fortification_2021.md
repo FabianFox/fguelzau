@@ -36,7 +36,7 @@ selected = true
 projects = ""
   
 # Links (optional).
-url_pdf = ""
+url_pdf = "https://www.sowi.hu-berlin.de/de/lehrbereiche/makro/News/hsr_46_2021_3_guelzau_mau_border-control-infrastructure.pdf"
 url_preprint = ""
 url_code = ""
 url_dataset = ""
