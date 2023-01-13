@@ -1,12 +1,10 @@
 ---
-title: Webscraping with R - An Introduction
-author: Fabian Gülzau
-date: '2019-01-18'
-slug: webscraping-with-r-an-introduction
-categories:
-  - webscraping
-tags:
-  - R
+title: "Webscraping with R - An Introduction"
+author: "Fabian Gülzau"
+date: "2019-01-18"
+slug: "webscraping-with-r-an-introduction"
+categories: webscraping
+tags: R
 header:
   caption: ''
   image: ''
