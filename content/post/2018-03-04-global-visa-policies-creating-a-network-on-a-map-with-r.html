@@ -1,13 +1,16 @@
 ---
-title: 'Global Visa Policies: Creating a Network on a Map with R'
-author: "Fabian GÃ¼lzau"
-date: '2018-03-04'
-slug: global-visa-policies-creating-a-network-on-a-map-with-r
+title: "Global Visa Policies - Creating a Network on a Map with R"
+author: "Fabian Gülzau"
+date: "2018-03-04"
+slug: "global-visa-policies-creating-a-network-on-a-map-with-r"
 tags:
 - network analysis
 - spatial data
 - global mobility
 categories: []
+header:
+  caption: ''
+  image: ''
 ---
 
 
@@ -21,7 +24,7 @@ categories: []
 </div>
 <div id="preparing-the-visa-network-data" class="section level3">
 <h3>Preparing the Visa Network Data</h3>
-<p>The Visa Network Data is hosted at the University of Bonn. It is freely available and described in some depth in an article published in the Journal of Ethnic and Migration Study by Mau et al. (2015). The following packages are used to create a network-on-a-map:</p>
+<p>The Visa Network Data is hosted at the University of Bonn. It is freely available and described in some depth in an article published in the Journal of Ethnic and Migration Study by Mau et al. (2015). The following packages are used to create a network-on-a-map:</p>
 <pre class="r"><code>if (!require(&quot;pacman&quot;)) install.packages(&quot;pacman&quot;)
 
 p_load(tidyverse, rworldmap, igraph, countrycode, statnet, rio, readxl)</code></pre>
@@ -97,15 +100,15 @@ visa.edge$from &lt;- lookup[match(visa.edge$from.no, lookup$no),]$country
 visa.edge$to &lt;- lookup[match(visa.edge$to.no, lookup$no),]$country</code></pre>
 <p>Let see if our interpretation of the edgelist above was correct.</p>
 <pre class="r"><code>head(visa.edge)</code></pre>
-<pre><code>## # A tibble: 6 x 4
+<pre><code>## # A tibble: 6 × 4
 ##   from.no to.no from  to   
 ##     &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;
-## 1      2.    5. ALB   ARG  
-## 2      2.    7. ALB   AUS  
-## 3      2.    8. ALB   AUT  
-## 4      2.   13. ALB   BEL  
-## 5      2.   17. ALB   BIH  
-## 6      2.   19. ALB   BRA</code></pre>
+## 1       2     5 ALB   ARG  
+## 2       2     7 ALB   AUS  
+## 3       2     8 ALB   AUT  
+## 4       2    13 ALB   BEL  
+## 5       2    17 ALB   BIH  
+## 6       2    19 ALB   BRA</code></pre>
 <p>Indeed, we can confirm our interpretation.</p>
 </div>
 <div id="creating-a-world-map" class="section level3">
@@ -114,6 +117,7 @@ visa.edge$to &lt;- lookup[match(visa.edge$to.no, lookup$no),]$country</code></pr
 <pre class="r"><code>data(&quot;countriesLow&quot;)</code></pre>
 <p>We can now easily plot a world map with a one-liner:</p>
 <pre class="r"><code>plot(countriesLow)</code></pre>
+<pre><code>## Warning in wkt(obj): CRS object has no comment</code></pre>
 <p><img src="/post/2018-03-04-global-visa-policies-creating-a-network-on-a-map-with-r_files/figure-html/plotmap-1.png" width="672" /></p>
 <p>I remove Greenland and Antarctica to make the map a little bit leaner:</p>
 <pre class="r"><code>countries &lt;- countriesLow[countriesLow@data$ISO3 != c(&quot;GRL&quot;, &quot;ATA&quot;),] # Greenland</code></pre>
@@ -133,15 +137,15 @@ visa.edge$region.from &lt;- countries[match(visa.edge$from, countries$ISO3),]$RE
 visa.edge$region.to &lt;- countries[match(visa.edge$to, countries$ISO3),]$REGION</code></pre>
 <p>The edgelist is now spatial.</p>
 <pre class="r"><code>head(visa.edge)</code></pre>
-<pre><code>## # A tibble: 6 x 6
+<pre><code>## # A tibble: 6 × 6
 ##   from.no to.no from  to    region.from region.to    
 ##     &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; &lt;fct&gt;       &lt;fct&gt;        
-## 1      2.    5. ALB   ARG   Europe      South America
-## 2      2.    7. ALB   AUS   Europe      Australia    
-## 3      2.    8. ALB   AUT   Europe      Europe       
-## 4      2.   13. ALB   BEL   Europe      Europe       
-## 5      2.   17. ALB   BIH   Europe      Europe       
-## 6      2.   19. ALB   BRA   Europe      South America</code></pre>
+## 1       2     5 ALB   ARG   Europe      South America
+## 2       2     7 ALB   AUS   Europe      Australia    
+## 3       2     8 ALB   AUT   Europe      Europe       
+## 4       2    13 ALB   BEL   Europe      Europe       
+## 5       2    17 ALB   BIH   Europe      Europe       
+## 6       2    19 ALB   BRA   Europe      South America</code></pre>
 </div>
 <div id="plotting-the-network-on-a-map" class="section level3">
 <h3>Plotting the network on a map</h3>
@@ -161,9 +165,9 @@ set.vertex.attribute(visa.net, attrname = &quot;lon&quot;, countrycoords$lon)
 set.vertex.attribute(visa.net, attrname = &quot;lat&quot;, countrycoords$lat)</code></pre>
 <p>Finally, we arrived at point where we can visualize a network-on-a-map. This is involves two steps. First, we plot the world map and, second, we put our network on top of it.</p>
 <pre class="r"><code># (1) Plot the world map
-plot(countries)
-
-# (2) Plot the network on top (using the network package)
+plot(countries)</code></pre>
+<pre><code>## Warning in wkt(obj): CRS object has no comment</code></pre>
+<pre class="r"><code># (2) Plot the network on top (using the network package)
 plot.network(visa.net,
              new = FALSE, # Plot on top of the world map
              coord = cbind(visa.net%v%&quot;lon&quot;, visa.net%v%&quot;lat&quot;), # Lon/Lat

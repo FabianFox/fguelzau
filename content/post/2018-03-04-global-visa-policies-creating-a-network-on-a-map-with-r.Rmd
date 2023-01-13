@@ -1,12 +1,12 @@
 ---
-title: Global Visa Policies - Creating a Network on a Map with R
-author: Fabian Gülzau
-date: '2018-03-04'
-slug: global-visa-policies-creating-a-network-on-a-map-with-r
+title: "Global Visa Policies - Creating a Network on a Map with R"
+author: "Fabian Gülzau"
+date: "2018-03-04"
+slug: "global-visa-policies-creating-a-network-on-a-map-with-r"
 tags:
-  - network analysis
-  - spatial data
-  - global mobility
+- network analysis
+- spatial data
+- global mobility
 categories: []
 header:
   caption: ''
