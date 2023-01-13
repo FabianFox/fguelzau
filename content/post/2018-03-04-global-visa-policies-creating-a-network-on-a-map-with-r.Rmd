@@ -1,5 +1,5 @@
 ---
-title: Global Visa Policies: Creating a Network on a Map with R
+title: Global Visa Policies - Creating a Network on a Map with R
 author: Fabian Gülzau
 date: '2018-03-04'
 slug: global-visa-policies-creating-a-network-on-a-map-with-r
