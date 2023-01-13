@@ -6,3 +6,5 @@
 Thumbs.db
 .DS_Store
 /public/
+.hugo_build.lock
+/resources/
